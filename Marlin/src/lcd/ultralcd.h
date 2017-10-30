@@ -63,6 +63,10 @@
     void dontExpireStatus();
   #endif
 
+  #if ENABLED(LCD_SET_PROGRESS_MANUALLY)
+    extern uint8_t progress_bar_percent;
+  #endif
+
   #if ENABLED(ADC_KEYPAD)
     uint8_t get_ADC_keyValue();
   #endif
@@ -217,6 +221,10 @@ void lcd_reset_status();
 // For i2c define BUZZ to use lcd_buzz
 #if ENABLED(LCD_USE_I2C_BUZZER)
   #define BUZZ(d,f) lcd_buzz(d, f)
+#endif
+
+#if ENABLED(SD_REPRINT_LAST_SELECTED_FILE)
+  void lcd_reselect_last_file();
 #endif
 
 #endif // ULTRALCD_H

@@ -118,6 +118,8 @@
   #include "pins_RUMBA.h"             // ATmega2560
 #elif MB(BQ_ZUM_MEGA_3D)
   #include "pins_BQ_ZUM_MEGA_3D.h"    // ATmega2560
+#elif MB(MAKEBOARD_MINI)
+  #include "pins_MAKEBOARD_MINI.h"    // ATmega2560
 
 //
 // Other ATmega1280, ATmega2560
@@ -300,6 +302,10 @@
   #include "pins_ALLIGATOR_R2.h"
 #elif MB(STM32F1R)
   #include "pins_STM32F1R.h"
+#elif MB(MKS_SBASE)
+  #include "pins_MKS_SBASE.h"
+#elif MB(AZSMZ_MINI)
+  #include "pins_AZSMZ_MINI.h"
 #else
   #error "Unknown MOTHERBOARD value set in Configuration.h"
 #endif
@@ -323,17 +329,62 @@
 #ifndef Z_MS2_PIN
   #define Z_MS2_PIN -1
 #endif
+#ifndef E0_STEP_PIN
+  #define E0_STEP_PIN -1
+#endif
+#ifndef E0_DIR_PIN
+  #define E0_DIR_PIN -1
+#endif
+#ifndef E0_ENABLE_PIN
+  #define E0_ENABLE_PIN -1
+#endif
 #ifndef E0_MS1_PIN
   #define E0_MS1_PIN -1
 #endif
 #ifndef E0_MS2_PIN
   #define E0_MS2_PIN -1
 #endif
+#ifndef E1_STEP_PIN
+  #define E1_STEP_PIN -1
+#endif
+#ifndef E1_DIR_PIN
+  #define E1_DIR_PIN -1
+#endif
+#ifndef E1_ENABLE_PIN
+  #define E1_ENABLE_PIN -1
+#endif
 #ifndef E1_MS1_PIN
   #define E1_MS1_PIN -1
 #endif
 #ifndef E1_MS2_PIN
   #define E1_MS2_PIN -1
+#endif
+#ifndef E2_STEP_PIN
+  #define E2_STEP_PIN -1
+#endif
+#ifndef E2_DIR_PIN
+  #define E2_DIR_PIN -1
+#endif
+#ifndef E2_ENABLE_PIN
+  #define E2_ENABLE_PIN -1
+#endif
+#ifndef E3_STEP_PIN
+  #define E3_STEP_PIN -1
+#endif
+#ifndef E3_DIR_PIN
+  #define E3_DIR_PIN -1
+#endif
+#ifndef E3_ENABLE_PIN
+  #define E3_ENABLE_PIN -1
+#endif
+#ifndef E4_STEP_PIN
+  #define E4_STEP_PIN -1
+#endif
+#ifndef E4_DIR_PIN
+  #define E4_DIR_PIN -1
+#endif
+#ifndef E4_ENABLE_PIN
+  #define E4_ENABLE_PIN -1
 #endif
 
 #ifndef FAN_PIN
@@ -617,7 +668,7 @@
     #define X2_STEP_PIN   _EPIN(E_STEPPERS, STEP)
     #define X2_DIR_PIN    _EPIN(E_STEPPERS, DIR)
     #define X2_ENABLE_PIN _EPIN(E_STEPPERS, ENABLE)
-    #if X2_ENABLE_PIN == 0
+    #if E_STEPPERS > 4 || !PIN_EXISTS(X2_ENABLE)
       #error "No E stepper plug left for X2!"
     #endif
   #endif
@@ -634,7 +685,7 @@
     #define Y2_STEP_PIN   _EPIN(Y2_E_INDEX, STEP)
     #define Y2_DIR_PIN    _EPIN(Y2_E_INDEX, DIR)
     #define Y2_ENABLE_PIN _EPIN(Y2_E_INDEX, ENABLE)
-    #if Y2_ENABLE_PIN == 0
+    #if Y2_E_INDEX > 4 || !PIN_EXISTS(Y2_ENABLE)
       #error "No E stepper plug left for Y2!"
     #endif
   #endif
@@ -651,7 +702,7 @@
     #define Z2_STEP_PIN   _EPIN(Z2_E_INDEX, STEP)
     #define Z2_DIR_PIN    _EPIN(Z2_E_INDEX, DIR)
     #define Z2_ENABLE_PIN _EPIN(Z2_E_INDEX, ENABLE)
-    #if Z2_ENABLE_PIN == 0
+    #if Z2_E_INDEX > 4 || !PIN_EXISTS(Z2_ENABLE)
       #error "No E stepper plug left for Z2!"
     #endif
   #endif
@@ -659,7 +710,11 @@
   #define _Z2_PINS Z2_STEP_PIN, Z2_DIR_PIN, Z2_ENABLE_PIN,
 #endif
 
-#define SENSITIVE_PINS { 0, 1, \
+#ifndef HAL_SENSITIVE_PINS
+#define HAL_SENSITIVE_PINS
+#endif
+
+#define SENSITIVE_PINS { \
     X_STEP_PIN, X_DIR_PIN, X_ENABLE_PIN, X_MIN_PIN, X_MAX_PIN, \
     Y_STEP_PIN, Y_DIR_PIN, Y_ENABLE_PIN, Y_MIN_PIN, Y_MAX_PIN, \
     Z_STEP_PIN, Z_DIR_PIN, Z_ENABLE_PIN, Z_MIN_PIN, Z_MAX_PIN, Z_MIN_PROBE_PIN, \
@@ -667,7 +722,8 @@
     _E0_PINS _E1_PINS _E2_PINS _E3_PINS _E4_PINS BED_PINS \
     _H0_PINS _H1_PINS _H2_PINS _H3_PINS _H4_PINS \
     _X2_PINS _Y2_PINS _Z2_PINS \
-    X_MS1_PIN, X_MS2_PIN, Y_MS1_PIN, Y_MS2_PIN, Z_MS1_PIN, Z_MS2_PIN \
+    X_MS1_PIN, X_MS2_PIN, Y_MS1_PIN, Y_MS2_PIN, Z_MS1_PIN, Z_MS2_PIN, \
+    HAL_SENSITIVE_PINS \
   }
 
 #define HAS_DIGIPOTSS (PIN_EXISTS(DIGIPOTSS))
