@@ -373,9 +373,9 @@
   //#define  DEFAULT_Kd 86.0
 
   // My values 
-  #define  DEFAULT_Kp 18.76
-  #define  DEFAULT_Ki 1.04
-  #define  DEFAULT_Kd 84.83
+  #define  DEFAULT_Kp 17.27
+  #define  DEFAULT_Ki 0.90
+  #define  DEFAULT_Kd 83.09
   
 #endif // PIDTEMP
 
@@ -423,9 +423,9 @@
   //#define DEFAULT_bedKd 695.22
 
    // Anet A8 12V heated bed with external MOSFET and 4mm cork insulation
-  #define  DEFAULT_bedKp 383.11
-  #define  DEFAULT_bedKi 41.90
-  #define  DEFAULT_bedKd 875.65
+  #define  DEFAULT_bedKp 411.87
+  #define  DEFAULT_bedKi 44.89
+  #define  DEFAULT_bedKd 944.73
   
   // FIND YOUR OWN: "M303 E-1 C8 S90" to run autotune on the bed at 90 degreesC for 8 cycles.
 #endif // PIDTEMPBED
