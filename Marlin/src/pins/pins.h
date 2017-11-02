@@ -167,6 +167,8 @@
 
 #elif MB(MINITRONICS)
   #include "pins_MINITRONICS.h"       // ATmega1281
+#elif MB(SILVER_GATE)
+  #include "pins_SILVER_GATE.h"       // ATmega2561
 
 //
 // Sanguinololu and Derivatives - ATmega644P, ATmega1284P
@@ -306,6 +308,8 @@
   #include "pins_MKS_SBASE.h"
 #elif MB(AZSMZ_MINI)
   #include "pins_AZSMZ_MINI.h"
+#elif MB(AZTEEG_X5_GT)
+  #include "pins_AZTEEG_X5_GT.h"
 #else
   #error "Unknown MOTHERBOARD value set in Configuration.h"
 #endif

@@ -1162,4 +1162,39 @@
   #define NOT_A_PIN 0 // For PINS_DEBUGGING
 #endif
 
+// Number of VFAT entries used. Each entry has 13 UTF-16 characters
+#if ENABLED(SCROLL_LONG_FILENAMES)
+  #define MAX_VFAT_ENTRIES (5)
+#else
+  #define MAX_VFAT_ENTRIES (2)
+#endif
+
+// Force SDCARD_SORT_ALPHA to be enabled for Graphical LCD on LPC1768
+// because of a bug in the shared SPI implementation. (See #8122)
+#if defined(TARGET_LPC1768) && ENABLED(REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER)
+  #define SDCARD_SORT_ALPHA         // Keeps one directory level in RAM. Changing
+                                    // directory levels still glitches the screen,
+                                    // but the following LCD update cleans it up.
+  #undef SDSORT_LIMIT
+  #undef SDSORT_USES_RAM
+  #undef SDSORT_USES_STACK
+  #undef SDSORT_CACHE_NAMES
+  #define SDSORT_LIMIT       256
+  #define SDSORT_USES_RAM    true
+  #define SDSORT_USES_STACK  false
+  #define SDSORT_CACHE_NAMES true
+  #ifndef FOLDER_SORTING
+    #define FOLDER_SORTING     -1
+  #endif
+  #ifndef SDSORT_GCODE
+    #define SDSORT_GCODE       false
+  #endif
+  #ifndef SDSORT_DYNAMIC_RAM
+    #define SDSORT_DYNAMIC_RAM false
+  #endif
+  #ifndef SDSORT_CACHE_VFATS
+    #define SDSORT_CACHE_VFATS 2
+  #endif
+#endif
+
 #endif // CONDITIONALS_POST_H
