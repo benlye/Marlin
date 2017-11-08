@@ -155,6 +155,8 @@ uint16_t max_display_update_time = 0;
     extern bool powersupply_on;
   #endif
 
+  float move_menu_scale;
+
   ////////////////////////////////////////////
   ///////////////// Menu Tree ////////////////
   ////////////////////////////////////////////
@@ -715,14 +717,7 @@ void lcd_reset_status() { lcd_setstatusPGM(PSTR(""), -1); }
 void kill_screen(const char* lcd_msg) {
   lcd_init();
   lcd_setalertstatusPGM(lcd_msg);
-  #if ENABLED(DOGLCD)
-    u8g.firstPage();
-    do {
-      lcd_kill_screen();
-    } while (u8g.nextPage());
-  #else
-    lcd_kill_screen();
-  #endif
+  lcd_kill_screen();
 }
 
 #if ENABLED(ULTIPANEL)
@@ -1679,7 +1674,7 @@ void kill_screen(const char* lcd_msg) {
      */
     static int8_t bed_corner;
     void _lcd_goto_next_corner() {
-      line_to_z(LOGICAL_Z_POSITION(4.0));
+      line_to_z(4.0);
       switch (bed_corner) {
         case 0:
           current_position[X_AXIS] = X_MIN_BED + 10;
@@ -1696,7 +1691,7 @@ void kill_screen(const char* lcd_msg) {
           break;
       }
       planner.buffer_line_kinematic(current_position, MMM_TO_MMS(manual_feedrate_mm_m[X_AXIS]), active_extruder);
-      line_to_z(LOGICAL_Z_POSITION(0.0));
+      line_to_z(0.0);
       if (++bed_corner > 3) bed_corner = 0;
     }
 
@@ -1742,7 +1737,7 @@ void kill_screen(const char* lcd_msg) {
     //
     void _lcd_after_probing() {
       #if MANUAL_PROBE_HEIGHT > 0
-        line_to_z(LOGICAL_Z_POSITION(Z_MIN_POS) + MANUAL_PROBE_HEIGHT);
+        line_to_z(Z_MIN_POS + MANUAL_PROBE_HEIGHT);
       #endif
       // Display "Done" screen and wait for moves to complete
       #if MANUAL_PROBE_HEIGHT > 0 || ENABLED(MESH_BED_LEVELING)
@@ -1757,13 +1752,13 @@ void kill_screen(const char* lcd_msg) {
     #if ENABLED(MESH_BED_LEVELING)
 
       // Utility to go to the next mesh point
-      inline void _manual_probe_goto_xy(float x, float y) {
+      inline void _manual_probe_goto_xy(const float &rx, const float &ry) {
         #if MANUAL_PROBE_HEIGHT > 0
           const float prev_z = current_position[Z_AXIS];
-          line_to_z(LOGICAL_Z_POSITION(Z_MIN_POS) + MANUAL_PROBE_HEIGHT);
+          line_to_z(Z_MIN_POS + MANUAL_PROBE_HEIGHT);
         #endif
-        current_position[X_AXIS] = LOGICAL_X_POSITION(x);
-        current_position[Y_AXIS] = LOGICAL_Y_POSITION(y);
+        current_position[X_AXIS] = rx;
+        current_position[Y_AXIS] = ry;
         planner.buffer_line_kinematic(current_position, MMM_TO_MMS(XY_PROBE_SPEED), active_extruder);
         #if MANUAL_PROBE_HEIGHT > 0
           line_to_z(prev_z);
@@ -1893,10 +1888,7 @@ void kill_screen(const char* lcd_msg) {
         mbl.zigzag(manual_probe_index, px, py);
 
         // Controls the loop until the move is done
-        _manual_probe_goto_xy(
-          LOGICAL_X_POSITION(mbl.index_to_xpos[px]),
-          LOGICAL_Y_POSITION(mbl.index_to_ypos[py])
-        );
+        _manual_probe_goto_xy(mbl.index_to_xpos[px], mbl.index_to_ypos[py]);
 
         // After the blocking function returns, change menus
         lcd_goto_screen(_lcd_level_bed_get_z);
@@ -2377,8 +2369,8 @@ void kill_screen(const char* lcd_msg) {
      * UBL LCD Map Movement
      */
     void ubl_map_move_to_xy() {
-      current_position[X_AXIS] = LOGICAL_X_POSITION(pgm_read_float(&ubl._mesh_index_to_xpos[x_plot]));
-      current_position[Y_AXIS] = LOGICAL_Y_POSITION(pgm_read_float(&ubl._mesh_index_to_ypos[y_plot]));
+      current_position[X_AXIS] = pgm_read_float(&ubl._mesh_index_to_xpos[x_plot]);
+      current_position[Y_AXIS] = pgm_read_float(&ubl._mesh_index_to_ypos[y_plot]);
       planner.buffer_line_kinematic(current_position, MMM_TO_MMS(XY_PROBE_SPEED), active_extruder);
     }
 
@@ -2689,12 +2681,46 @@ void kill_screen(const char* lcd_msg) {
     END_MENU();
   }
 
-  float move_menu_scale;
-
-  #if ENABLED(DELTA_CALIBRATION_MENU)
+  #if ENABLED(DELTA_CALIBRATION_MENU) || (ENABLED(DELTA_AUTO_CALIBRATION) && !HAS_BED_PROBE)
 
     void lcd_move_z();
-    void lcd_delta_calibrate_menu();
+
+    void _man_probe_pt(const float &rx, const float &ry) {
+      #if HAS_LEVELING
+        reset_bed_level(); // After calibration bed-level data is no longer valid
+      #endif
+
+      float z_dest = (Z_CLEARANCE_BETWEEN_PROBES) + (DELTA_PRINTABLE_RADIUS) / 5;
+      line_to_z(z_dest);
+      current_position[X_AXIS] = rx;
+      current_position[Y_AXIS] = ry;
+      line_to_current_z();
+      z_dest = Z_CLEARANCE_BETWEEN_PROBES;
+      line_to_z(z_dest);
+
+      lcd_synchronize();
+      move_menu_scale = PROBE_MANUALLY_STEP;
+      lcd_goto_screen(lcd_move_z);
+    }
+
+  #endif // DELTA_CALIBRATION_MENU || (DELTA_AUTO_CALIBRATION && !HAS_BED_PROBE)
+
+  #if ENABLED(DELTA_AUTO_CALIBRATION) && !HAS_BED_PROBE
+
+    float lcd_probe_pt(const float &rx, const float &ry) {
+      _man_probe_pt(rx, ry);
+      KEEPALIVE_STATE(PAUSED_FOR_USER);
+      defer_return_to_status = true;
+      wait_for_user = true;
+      while (wait_for_user) idle();
+      KEEPALIVE_STATE(IN_HANDLER);
+      lcd_goto_previous_menu_no_defer();
+      return current_position[Z_AXIS];
+    }
+
+  #endif // DELTA_AUTO_CALIBRATION && !HAS_BED_PROBE
+
+  #if ENABLED(DELTA_CALIBRATION_MENU)
 
     void _lcd_calibrate_homing() {
       if (lcdDrawUpdate) lcd_implementation_drawmenu_static(LCD_HEIGHT >= 4 ? 1 : 0, PSTR(MSG_LEVEL_BED_HOMING));
@@ -2710,35 +2736,6 @@ void kill_screen(const char* lcd_msg) {
 
       enqueue_and_echo_commands_P(PSTR("G28"));
       lcd_goto_screen(_lcd_calibrate_homing);
-    }
-
-    void _man_probe_pt(const float &lx, const float &ly) {
-      #if HAS_LEVELING
-        reset_bed_level(); // After calibration bed-level data is no longer valid
-      #endif
-
-      float z_dest = LOGICAL_Z_POSITION((Z_CLEARANCE_BETWEEN_PROBES) + (DELTA_PRINTABLE_RADIUS) / 5);
-      line_to_z(z_dest);
-      current_position[X_AXIS] = LOGICAL_X_POSITION(lx);
-      current_position[Y_AXIS] = LOGICAL_Y_POSITION(ly);
-      line_to_current_z();
-      z_dest = LOGICAL_Z_POSITION(Z_CLEARANCE_BETWEEN_PROBES);
-      line_to_z(z_dest);
-
-      lcd_synchronize();
-      move_menu_scale = PROBE_MANUALLY_STEP;
-      lcd_goto_screen(lcd_move_z);
-    }
-
-    float lcd_probe_pt(const float &lx, const float &ly) {
-      _man_probe_pt(lx, ly);
-      KEEPALIVE_STATE(PAUSED_FOR_USER);
-      defer_return_to_status = true;
-      wait_for_user = true;
-      while (wait_for_user) idle();
-      KEEPALIVE_STATE(IN_HANDLER);
-      lcd_goto_previous_menu_no_defer();
-      return current_position[Z_AXIS];
     }
 
     void _goto_tower_x() { _man_probe_pt(cos(RADIANS(210)) * delta_calibration_radius, sin(RADIANS(210)) * delta_calibration_radius); }
@@ -4329,31 +4326,29 @@ void kill_screen(const char* lcd_msg) {
   #if ENABLED(ADC_KEYPAD)
 
     inline bool handle_adc_keypad() {
-      static uint8_t adc_steps = 0;
+      #define ADC_MIN_KEY_DELAY 100
       if (buttons_reprapworld_keypad) {
-        if (adc_steps < 20) ++adc_steps;
-        lcd_quick_feedback();
         lcdDrawUpdate = LCDVIEW_REDRAW_NOW;
         if (encoderDirection == -1) { // side effect which signals we are inside a menu
           if      (buttons_reprapworld_keypad & EN_REPRAPWORLD_KEYPAD_DOWN)  encoderPosition -= ENCODER_STEPS_PER_MENU_ITEM;
           else if (buttons_reprapworld_keypad & EN_REPRAPWORLD_KEYPAD_UP)    encoderPosition += ENCODER_STEPS_PER_MENU_ITEM;
-          else if (buttons_reprapworld_keypad & EN_REPRAPWORLD_KEYPAD_LEFT)  menu_action_back();
-          else if (buttons_reprapworld_keypad & EN_REPRAPWORLD_KEYPAD_RIGHT) lcd_return_to_status();
+          else if (buttons_reprapworld_keypad & EN_REPRAPWORLD_KEYPAD_LEFT)  { menu_action_back(); lcd_quick_feedback(); }
+          else if (buttons_reprapworld_keypad & EN_REPRAPWORLD_KEYPAD_RIGHT) { lcd_return_to_status(); lcd_quick_feedback(); }
         }
         else {
-          const int8_t step = adc_steps > 19 ? 100 : adc_steps > 10 ? 10 : 1;
-               if (buttons_reprapworld_keypad & EN_REPRAPWORLD_KEYPAD_DOWN)  encoderPosition += ENCODER_PULSES_PER_STEP * step;
-          else if (buttons_reprapworld_keypad & EN_REPRAPWORLD_KEYPAD_UP)    encoderPosition -= ENCODER_PULSES_PER_STEP * step;
-          else if (buttons_reprapworld_keypad & EN_REPRAPWORLD_KEYPAD_RIGHT) encoderPosition = 0;
+          if (buttons_reprapworld_keypad & (EN_REPRAPWORLD_KEYPAD_DOWN|EN_REPRAPWORLD_KEYPAD_UP|EN_REPRAPWORLD_KEYPAD_RIGHT)) {
+                 if (buttons_reprapworld_keypad & EN_REPRAPWORLD_KEYPAD_DOWN)  encoderPosition += ENCODER_PULSES_PER_STEP;
+            else if (buttons_reprapworld_keypad & EN_REPRAPWORLD_KEYPAD_UP)    encoderPosition -= ENCODER_PULSES_PER_STEP;
+            else if (buttons_reprapworld_keypad & EN_REPRAPWORLD_KEYPAD_RIGHT) encoderPosition = 0;
+          }
         }
         #if ENABLED(ADC_KEYPAD_DEBUG)
           SERIAL_PROTOCOLLNPAIR("buttons_reprapworld_keypad = ", (uint32_t)buttons_reprapworld_keypad);
           SERIAL_PROTOCOLLNPAIR("encoderPosition = ", (uint32_t)encoderPosition);
         #endif
+        next_button_update_ms = millis() + ADC_MIN_KEY_DELAY;
         return true;
       }
-      else if (!thermalManager.current_ADCKey_raw)
-        adc_steps = 0; // reset stepping acceleration
 
       return false;
     }
@@ -4461,14 +4456,13 @@ void lcd_init() {
   );
 
   #if ENABLED(NEWPANEL)
+
     #if BUTTON_EXISTS(EN1)
       SET_INPUT_PULLUP(BTN_EN1);
     #endif
-
     #if BUTTON_EXISTS(EN2)
       SET_INPUT_PULLUP(BTN_EN2);
     #endif
-
     #if BUTTON_EXISTS(ENC)
       SET_INPUT_PULLUP(BTN_ENC);
     #endif
@@ -4742,22 +4736,18 @@ void lcd_update() {
     #endif
 
     if ((lcdDrawUpdate || IS_DRAWING) && (!bbr2 || bbr2 > max_display_update_time)) {
-      #if ENABLED(DOGLCD)
-        if (!drawing_screen)
-      #endif
-        {
-          switch (lcdDrawUpdate) {
-            case LCDVIEW_CALL_NO_REDRAW:
-              lcdDrawUpdate = LCDVIEW_NONE;
-              break;
-            case LCDVIEW_CLEAR_CALL_REDRAW: // set by handlers, then altered after (rarely occurs here)
-            case LCDVIEW_CALL_REDRAW_NEXT:  // set by handlers, then altered after (never occurs here?)
-              lcdDrawUpdate = LCDVIEW_REDRAW_NOW;
-            case LCDVIEW_REDRAW_NOW:        // set above, or by a handler through LCDVIEW_CALL_REDRAW_NEXT
-            case LCDVIEW_NONE:
-              break;
-          } // switch
-        }
+
+      if (!IS_DRAWING) switch (lcdDrawUpdate) {
+        case LCDVIEW_CALL_NO_REDRAW:
+          lcdDrawUpdate = LCDVIEW_NONE;
+          break;
+        case LCDVIEW_CLEAR_CALL_REDRAW: // set by handlers, then altered after (rarely occurs here)
+        case LCDVIEW_CALL_REDRAW_NEXT:  // set by handlers, then altered after (never occurs here?)
+          lcdDrawUpdate = LCDVIEW_REDRAW_NOW;
+        case LCDVIEW_REDRAW_NOW:        // set above, or by a handler through LCDVIEW_CALL_REDRAW_NEXT
+        case LCDVIEW_NONE:
+          break;
+      } // switch
 
       #if ENABLED(ADC_KEYPAD)
         buttons_reprapworld_keypad = 0;
@@ -4769,14 +4759,18 @@ void lcd_update() {
         #define CURRENTSCREEN() lcd_status_screen()
       #endif
 
-      #if ENABLED(DOGLCD)  // Changes due to different driver architecture of the DOGM display
-        if (!drawing_screen) {
-          u8g.firstPage();
-          drawing_screen = 1;
+      #if ENABLED(DOGLCD)
+        if (!drawing_screen) {                        // If not already drawing pages
+          u8g.firstPage();                            // Start the first page
+          drawing_screen = 1;                         // Flag as drawing pages
         }
-        lcd_setFont(FONT_MENU);
-        u8g.setColorIndex(1);
-        CURRENTSCREEN();
+        lcd_setFont(FONT_MENU);                       // Setup font for every page draw
+        u8g.setColorIndex(1);                         // And reset the color
+        CURRENTSCREEN();                              // Draw and process the current screen
+
+        // The screen handler can clear drawing_screen for an action that changes the screen.
+        // If still drawing and there's another page, update max-time and return now.
+        // The nextPage will already be set up on the next call.
         if (drawing_screen && (drawing_screen = u8g.nextPage())) {
           NOLESS(max_display_update_time, millis() - ms);
           return;
@@ -4784,6 +4778,9 @@ void lcd_update() {
       #else
         CURRENTSCREEN();
       #endif
+
+      // Keeping track of the longest time for an individual LCD update.
+      // Used to do screen throttling when the planner starts to fill up.
       NOLESS(max_display_update_time, millis() - ms);
     }
 
@@ -4797,23 +4794,19 @@ void lcd_update() {
 
     #endif // ULTIPANEL
 
-    #if ENABLED(DOGLCD)
-      if (!drawing_screen)
-    #endif
-      {
-        switch (lcdDrawUpdate) {
-          case LCDVIEW_CLEAR_CALL_REDRAW:
-            lcd_implementation_clear();
-          case LCDVIEW_CALL_REDRAW_NEXT:
-            lcdDrawUpdate = LCDVIEW_REDRAW_NOW;
-            break;
-          case LCDVIEW_REDRAW_NOW:
-            lcdDrawUpdate = LCDVIEW_NONE;
-            break;
-          case LCDVIEW_NONE:
-            break;
-        } // switch
-      }
+    if (!IS_DRAWING) switch (lcdDrawUpdate) {
+      case LCDVIEW_CLEAR_CALL_REDRAW:
+        lcd_implementation_clear();
+      case LCDVIEW_CALL_REDRAW_NEXT:
+        lcdDrawUpdate = LCDVIEW_REDRAW_NOW;
+        break;
+      case LCDVIEW_REDRAW_NOW:
+        lcdDrawUpdate = LCDVIEW_NONE;
+        break;
+      case LCDVIEW_NONE:
+        break;
+    } // switch
+
   } // ELAPSED(ms, next_lcd_update_ms)
 }
 
