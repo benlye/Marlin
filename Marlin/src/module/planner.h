@@ -144,7 +144,7 @@ class Planner {
       static uint8_t last_extruder;             // Respond to extruder change
     #endif
 
-    static int16_t flow_percentage[EXTRUDERS];  // Extrusion factor for each extruder
+    static int16_t flow_percentage[EXTRUDERS]; // Extrusion factor for each extruder
 
     static float e_factor[EXTRUDERS],               // The flow percentage and volumetric multiplier combine to scale E movement
                  filament_size[EXTRUDERS],          // diameter of filament (in millimeters), typically around 1.75 or 2.85, 0 disables the volumetric calculations for the extruder
@@ -357,11 +357,11 @@ class Planner {
      *
      * Add a new linear movement to the buffer (in terms of steps).
      *
-     *  target    - target position in steps units
-     *  fr_mm_s   - (target) speed of the move
-     *  extruder  - target extruder
+     *  target      - target position in steps units
+     *  fr_mm_s     - (target) speed of the move
+     *  extruder    - target extruder
      */
-    static void _buffer_steps(const int32_t target[XYZE], float fr_mm_s, const uint8_t extruder);
+    static void _buffer_steps(const int32_t (&target)[XYZE], float fr_mm_s, const uint8_t extruder);
 
     /**
      * Planner::_buffer_line
