@@ -600,6 +600,9 @@
 
 #endif // SDSUPPORT
 
+// Add an 'M73' G-code to set the current percentage
+#define LCD_SET_PROGRESS_MANUALLY
+
 /**
  * Additional options for Graphical Displays
  *
