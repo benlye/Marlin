@@ -191,10 +191,6 @@ volatile bool wait_for_heatup = true;
 millis_t max_inactive_time = 0,
          stepper_inactive_time = (DEFAULT_STEPPER_DEACTIVE_TIME) * 1000UL;
 
-#if ENABLED(ADVANCED_PAUSE_FEATURE)
-  AdvancedPauseMenuResponse advanced_pause_menu_response;
-#endif
-
 #ifdef CHDK
   millis_t chdkHigh = 0;
   bool chdkActive = false;
@@ -306,6 +302,16 @@ void disable_e_steppers() {
   disable_E2();
   disable_E3();
   disable_E4();
+}
+
+void disable_e_stepper(const uint8_t e) {
+  switch (e) {
+    case 0: disable_E0(); break;
+    case 1: disable_E1(); break;
+    case 2: disable_E2(); break;
+    case 3: disable_E3(); break;
+    case 4: disable_E4(); break;
+  }
 }
 
 void disable_all_steppers() {
@@ -663,9 +669,22 @@ void setup() {
     disableStepperDrivers();
   #endif
 
-  MYSERIAL.begin(BAUDRATE);
-  uint32_t serial_connect_timeout = millis() + 1000;
-  while(!MYSERIAL && PENDING(millis(), serial_connect_timeout));
+  #if NUM_SERIAL > 0
+    MYSERIAL0.begin(BAUDRATE);
+    #if NUM_SERIAL > 1
+      MYSERIAL1.begin(BAUDRATE);
+    #endif
+  #endif
+
+  #if NUM_SERIAL > 0
+    uint32_t serial_connect_timeout = millis() + 1000UL;
+    while(!MYSERIAL0 && PENDING(millis(), serial_connect_timeout)) { /*nada*/ }
+    #if NUM_SERIAL > 1
+      serial_connect_timeout = millis() + 1000UL;
+      while(!MYSERIAL1 && PENDING(millis(), serial_connect_timeout)) { /*nada*/ }
+    #endif
+  #endif
+
   SERIAL_PROTOCOLLNPGM("start");
   SERIAL_ECHO_START();
 
