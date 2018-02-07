@@ -143,13 +143,11 @@
 #if ENABLED(USE_BIG_EDIT_FONT)
   #define FONT_MENU_EDIT_NAME u8g_font_9x18
   #define DOG_CHAR_WIDTH_EDIT  9
-  #define DOG_CHAR_HEIGHT_EDIT 13
-  #define LCD_WIDTH_EDIT       14
+  #define DOG_CHAR_HEIGHT_EDIT 18
 #else
   #define FONT_MENU_EDIT_NAME FONT_MENU_NAME
-  #define DOG_CHAR_WIDTH_EDIT  6
-  #define DOG_CHAR_HEIGHT_EDIT 12
-  #define LCD_WIDTH_EDIT       22
+  #define DOG_CHAR_WIDTH_EDIT  DOG_CHAR_WIDTH
+  #define DOG_CHAR_HEIGHT_EDIT DOG_CHAR_HEIGHT
 #endif
 
 #ifndef TALL_FONT_CORRECTION
@@ -160,19 +158,22 @@
 
 // LCD selection
 #if ENABLED(REPRAPWORLD_GRAPHICAL_LCD)
-  #ifdef CPU_32_BIT
-    U8GLIB_ST7920_128X64_4X u8g(LCD_PINS_D4, LCD_PINS_ENABLE, LCD_PINS_RS); // Original u8glib device. 2 stripes, SW SPI
-  #else
+  #ifdef DISABLED(SDSUPPORT) && (LCD_PINS_D4 == SCK_PIN) && (LCD_PINS_ENABLE == MOSI_PIN)
     U8GLIB_ST7920_128X64_4X u8g(LCD_PINS_RS); // 2 stripes, HW SPI (shared with SD card)
+  #else
+    U8GLIB_ST7920_128X64_4X u8g(LCD_PINS_D4, LCD_PINS_ENABLE, LCD_PINS_RS); // Original u8glib device. 2 stripes, SW SPI
   #endif
 
 #elif ENABLED(U8GLIB_ST7920)
   // RepRap Discount Full Graphics Smart Controller
-    //U8GLIB_ST7920_128X64_4X u8g(LCD_PINS_RS); // 2 stripes, HW SPI (shared with SD card, on AVR does not use standard LCD adapter)
+  #if DISABLED(SDSUPPORT) && (LCD_PINS_D4 == SCK_PIN) && (LCD_PINS_ENABLE == MOSI_PIN)
+    U8GLIB_ST7920_128X64_4X_HAL u8g(LCD_PINS_RS); // 2 stripes, HW SPI (shared with SD card, on AVR does not use standard LCD adapter)
+  #else
     //U8GLIB_ST7920_128X64_4X u8g(LCD_PINS_D4, LCD_PINS_ENABLE, LCD_PINS_RS); // Original u8glib device. 2 stripes, SW SPI
     U8GLIB_ST7920_128X64_RRD u8g(LCD_PINS_D4, LCD_PINS_ENABLE, LCD_PINS_RS); // Number of stripes can be adjusted in ultralcd_st7920_u8glib_rrd.h with PAGE_HEIGHT
                                                                            // AVR version ignores these pin settings
                                                                            // HAL version uses these pin settings
+  #endif
 
 #elif ENABLED(CARTESIO_UI)
   // The CartesioUI display
@@ -186,8 +187,11 @@
 
 #elif ENABLED(U8GLIB_ST7565_64128N)
   // The MaKrPanel, Mini Viki, and Viki 2.0, ST7565 controller
-    //U8GLIB_64128N_2X_HAL u8g(DOGLCD_CS, DOGLCD_A0);  // using HW-SPI
+  #if DISABLED(SDSUPPORT) && (DOGLCD_SCK == SCK_PIN) && (DOGLCD_MOSI == MOSI_PIN)
+    U8GLIB_64128N_2X_HAL u8g(DOGLCD_CS, DOGLCD_A0);  // using HW-SPI
+  #else
     U8GLIB_64128N_2X_HAL u8g(DOGLCD_SCK, DOGLCD_MOSI, DOGLCD_CS, DOGLCD_A0);  // using SW-SPI
+  #endif
 
 #elif ENABLED(MKS_12864OLED_SSD1306)
   // MKS 128x64 (SSD1306) OLED I2C LCD
@@ -207,6 +211,9 @@
   // Generic support for SH1106 OLED I2C LCDs
     //U8GLIB_SH1106_128X64_2X_I2C_2_WIRE  u8g(U8G_I2C_OPT_NONE | U8G_I2C_OPT_FAST); // 4 stripes
     U8GLIB_SH1106_128X64_2X u8g(U8G_I2C_OPT_NONE | U8G_I2C_OPT_FAST); // 4 stripes
+#elif ENABLED(U8GLIB_SSD1309)
+  // Generic support for SSD1309 OLED I2C LCDs
+  U8GLIB_SSD1309_128X64 u8g(U8G_I2C_OPT_NONE | U8G_I2C_OPT_FAST);
 #elif ENABLED(MINIPANEL)
   // The MINIPanel display
     //U8GLIB_MINI12864 u8g(DOGLCD_CS, DOGLCD_A0);  // 8 stripes
@@ -387,7 +394,7 @@ void lcd_implementation_clear() { } // Automatically cleared by Picture Loop
 
 FORCE_INLINE void _draw_centered_temp(const int16_t temp, const uint8_t x, const uint8_t y) {
   const char * const str = itostr3(temp);
-  u8g.setPrintPos(x - (str[0] != ' ' ? 3 : str[1] != ' ' ? 2 : 1) * DOG_CHAR_WIDTH / 2, y);
+  u8g.setPrintPos(x - (str[0] != ' ' ? 0 : str[1] != ' ' ? 1 : 2) * DOG_CHAR_WIDTH / 2, y);
   lcd_print(str);
   lcd_printPGM(PSTR(LCD_STR_DEGREE " "));
 }
@@ -929,13 +936,15 @@ static void lcd_implementation_status_screen() {
     const uint8_t labellen = lcd_strlen_P(pstr),
                   vallen = lcd_strlen(value);
 
+    constexpr uint8_t lcd_width_edit = (LCD_WIDTH) / (DOG_CHAR_WIDTH_EDIT);
+
     uint8_t rows = (labellen > LCD_WIDTH - 2 - vallen) ? 2 : 1;
 
     #if ENABLED(USE_BIG_EDIT_FONT)
       uint8_t lcd_width, char_width;
-      if (labellen <= LCD_WIDTH_EDIT - 1) {
-        if (labellen + vallen + 2 >= LCD_WIDTH_EDIT) rows = 2;
-        lcd_width = LCD_WIDTH_EDIT + 1;
+      if (labellen <= lcd_width_edit - 1) {
+        if (labellen + vallen + 2 >= lcd_width_edit) rows = 2;
+        lcd_width = lcd_width_edit + 1;
         char_width = DOG_CHAR_WIDTH_EDIT;
         lcd_setFont(FONT_MENU_EDIT);
       }
