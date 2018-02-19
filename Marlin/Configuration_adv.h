@@ -496,9 +496,6 @@
 // Add an 'M73' G-code to set the current percentage
 #define LCD_SET_PROGRESS_MANUALLY
 
-// Add an 'M73' G-code to set the current percentage
-//#define LCD_SET_PROGRESS_MANUALLY
-
 /**
  * LED Control Menu
  * Enable this feature to add LED Control to the LCD menu
