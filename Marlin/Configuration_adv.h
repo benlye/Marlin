@@ -185,7 +185,7 @@
  */
 //#define USE_CONTROLLER_FAN
 #if ENABLED(USE_CONTROLLER_FAN)
-  //#define CONTROLLER_FAN_PIN FAN1_PIN  // Set a custom pin for the controller fan
+  //#define CONTROLLER_FAN_PIN -1        // Set a custom pin for the controller fan
   #define CONTROLLERFAN_SECS 60          // Duration in seconds for the fan to run after all motors are disabled
   #define CONTROLLERFAN_SPEED 255        // 255 == full speed
 #endif
@@ -362,6 +362,9 @@
 // When G28 is called, this option will make Y home before X
 //#define HOME_Y_BEFORE_X
 
+// Enable this if X or Y can't home without homing the other axis first.
+//#define CODEPENDENT_XY_HOMING
+
 // @section machine
 
 #define AXIS_RELATIVE_MODES {false, false, false, false}
@@ -492,6 +495,9 @@
 
 // Add an 'M73' G-code to set the current percentage
 #define LCD_SET_PROGRESS_MANUALLY
+
+// Add an 'M73' G-code to set the current percentage
+//#define LCD_SET_PROGRESS_MANUALLY
 
 /**
  * LED Control Menu
