@@ -132,6 +132,8 @@
   #include "pins_BQ_ZUM_MEGA_3D.h"    // ATmega2560
 #elif MB(MAKEBOARD_MINI)
   #include "pins_MAKEBOARD_MINI.h"    // ATmega2560
+#elif MB(TRIGORILLA)
+  #include "pins_TRIGORILLA.h"        // ATmega2560
 
 //
 // Other ATmega1280, ATmega2560
@@ -197,6 +199,8 @@
   #include "pins_MELZI_MALYAN.h"      // ATmega644P, ATmega1284P
 #elif MB(CREALITY_ENDER)
   #include "pins_CREALITY_ENDER.h"    // ATmega1284P
+#elif MB(MELZI_TRONXY)
+  #include "pins_MELZI_TRONXY.h"      // ATmega644P, ATmega1284P
 #elif MB(STB_11)
   #include "pins_STB_11.h"            // ATmega644P, ATmega1284P
 #elif MB(AZTEEG_X1)
@@ -341,6 +345,12 @@
   #include "pins_BIQU_BQ111_A4.h"
 #elif MB(THE_BORG)
   #include "pins_THE_BORG.h"
+#elif MB(SELENA_COMPACT)
+  #include "pins_SELENA_COMPACT.h"
+#elif MB(COHESION3D_REMIX)
+  #include "pins_COHESION3D_REMIX.h"
+#elif MB(COHESION3D_MINI)
+  #include "pins_COHESION3D_MINI.h"
 #else
   #error "Unknown MOTHERBOARD value set in Configuration.h"
 #endif
@@ -364,6 +374,46 @@
 #ifndef Z_MS2_PIN
   #define Z_MS2_PIN -1
 #endif
+#ifndef Z_MS3_PIN
+  #define Z_MS3_PIN -1
+#endif
+#ifndef E0_MS1_PIN
+  #define E0_MS1_PIN -1
+#endif
+#ifndef E0_MS2_PIN
+  #define E0_MS2_PIN -1
+#endif
+#ifndef E1_MS1_PIN
+  #define E1_MS1_PIN -1
+#endif
+#ifndef E1_MS2_PIN
+  #define E1_MS2_PIN -1
+#endif
+#ifndef E2_MS1_PIN
+  #define E2_MS1_PIN -1
+#endif
+#ifndef E2_MS2_PIN
+  #define E2_MS2_PIN -1
+#endif
+#ifndef E3_MS1_PIN
+  #define E3_MS1_PIN -1
+#endif
+#ifndef E3_MS2_PIN
+  #define E3_MS2_PIN -1
+#endif
+#ifndef E3_MS3_PIN
+  #define E3_MS3_PIN -1
+#endif
+#ifndef E4_MS1_PIN
+  #define E4_MS1_PIN -1
+#endif
+#ifndef E4_MS2_PIN
+  #define E4_MS2_PIN -1
+#endif
+#ifndef E4_MS3_PIN
+  #define E4_MS3_PIN -1
+#endif
+
 #ifndef E0_STEP_PIN
   #define E0_STEP_PIN -1
 #endif
@@ -373,12 +423,6 @@
 #ifndef E0_ENABLE_PIN
   #define E0_ENABLE_PIN -1
 #endif
-#ifndef E0_MS1_PIN
-  #define E0_MS1_PIN -1
-#endif
-#ifndef E0_MS2_PIN
-  #define E0_MS2_PIN -1
-#endif
 #ifndef E1_STEP_PIN
   #define E1_STEP_PIN -1
 #endif
@@ -387,12 +431,6 @@
 #endif
 #ifndef E1_ENABLE_PIN
   #define E1_ENABLE_PIN -1
-#endif
-#ifndef E1_MS1_PIN
-  #define E1_MS1_PIN -1
-#endif
-#ifndef E1_MS2_PIN
-  #define E1_MS2_PIN -1
 #endif
 #ifndef E2_STEP_PIN
   #define E2_STEP_PIN -1
@@ -489,6 +527,9 @@
 #ifndef SDPOWER
   #define SDPOWER -1
 #endif
+#ifndef SDSS
+  #define SDSS -1
+#endif
 #ifndef LED_PIN
   #define LED_PIN -1
 #endif
@@ -509,20 +550,40 @@
 //
 // Assign auto fan pins if needed
 //
-#if !defined(E0_AUTO_FAN_PIN) && defined(ORIG_E0_AUTO_FAN_PIN)
-  #define E0_AUTO_FAN_PIN ORIG_E0_AUTO_FAN_PIN
+#ifndef E0_AUTO_FAN_PIN
+  #ifdef ORIG_E0_AUTO_FAN_PIN
+    #define E0_AUTO_FAN_PIN ORIG_E0_AUTO_FAN_PIN
+  #else
+    #define E0_AUTO_FAN_PIN -1
+  #endif
 #endif
-#if !defined(E1_AUTO_FAN_PIN) && defined(ORIG_E1_AUTO_FAN_PIN)
-  #define E1_AUTO_FAN_PIN ORIG_E1_AUTO_FAN_PIN
+#ifndef E1_AUTO_FAN_PIN
+  #ifdef ORIG_E1_AUTO_FAN_PIN
+    #define E1_AUTO_FAN_PIN ORIG_E1_AUTO_FAN_PIN
+  #else
+    #define E1_AUTO_FAN_PIN -1
+  #endif
 #endif
-#if !defined(E2_AUTO_FAN_PIN) && defined(ORIG_E2_AUTO_FAN_PIN)
-  #define E2_AUTO_FAN_PIN ORIG_E2_AUTO_FAN_PIN
+#ifndef E2_AUTO_FAN_PIN
+  #ifdef ORIG_E2_AUTO_FAN_PIN
+    #define E2_AUTO_FAN_PIN ORIG_E2_AUTO_FAN_PIN
+  #else
+    #define E2_AUTO_FAN_PIN -1
+  #endif
 #endif
-#if !defined(E3_AUTO_FAN_PIN) && defined(ORIG_E3_AUTO_FAN_PIN)
-  #define E3_AUTO_FAN_PIN ORIG_E3_AUTO_FAN_PIN
+#ifndef E3_AUTO_FAN_PIN
+  #ifdef ORIG_E3_AUTO_FAN_PIN
+    #define E3_AUTO_FAN_PIN ORIG_E3_AUTO_FAN_PIN
+  #else
+    #define E3_AUTO_FAN_PIN -1
+  #endif
 #endif
-#if !defined(E4_AUTO_FAN_PIN) && defined(ORIG_E4_AUTO_FAN_PIN)
-  #define E4_AUTO_FAN_PIN ORIG_E4_AUTO_FAN_PIN
+#ifndef E4_AUTO_FAN_PIN
+  #ifdef ORIG_E4_AUTO_FAN_PIN
+    #define E4_AUTO_FAN_PIN ORIG_E4_AUTO_FAN_PIN
+  #else
+    #define E4_AUTO_FAN_PIN -1
+  #endif
 #endif
 
 // List of pins which to ignore when asked to change by gcode, 0 and 1 are RX and TX, do not mess with those!
@@ -539,7 +600,7 @@
     #define _E1_PINS E1_STEP_PIN, E1_DIR_PIN, E1_ENABLE_PIN, E1_MS1_PIN, E1_MS2_PIN,
     #if EXTRUDERS > 4 // Tools 4 and 5 use E2
       #undef _E2_PINS
-      #define _E2_PINS E2_STEP_PIN, E2_DIR_PIN, E2_ENABLE_PIN,
+      #define _E2_PINS E2_STEP_PIN, E2_DIR_PIN, E2_ENABLE_PIN, E2_MS1_PIN, E2_MS2_PIN,
     #endif
   #endif
 #elif EXTRUDERS > 1
@@ -547,13 +608,13 @@
   #define _E1_PINS E1_STEP_PIN, E1_DIR_PIN, E1_ENABLE_PIN, E1_MS1_PIN, E1_MS2_PIN,
   #if EXTRUDERS > 2
     #undef _E2_PINS
-    #define _E2_PINS E2_STEP_PIN, E2_DIR_PIN, E2_ENABLE_PIN,
+    #define _E2_PINS E2_STEP_PIN, E2_DIR_PIN, E2_ENABLE_PIN, E2_MS1_PIN, E2_MS2_PIN,
     #if EXTRUDERS > 3
       #undef _E3_PINS
-      #define _E3_PINS E3_STEP_PIN, E3_DIR_PIN, E3_ENABLE_PIN,
+      #define _E3_PINS E3_STEP_PIN, E3_DIR_PIN, E3_ENABLE_PIN, E3_MS1_PIN, E3_MS2_PIN,
       #if EXTRUDERS > 4
         #undef _E4_PINS
-        #define _E4_PINS E4_STEP_PIN, E4_DIR_PIN, E4_ENABLE_PIN,
+        #define _E4_PINS E4_STEP_PIN, E4_DIR_PIN, E4_ENABLE_PIN, E4_MS1_PIN, E4_MS2_PIN,
       #endif // EXTRUDERS > 4
     #endif // EXTRUDERS > 3
   #endif // EXTRUDERS > 2
@@ -582,16 +643,16 @@
   #endif // HOTENDS > 2
 #elif ENABLED(MIXING_EXTRUDER)
   #undef _E1_PINS
-  #define _E1_PINS E1_STEP_PIN, E1_DIR_PIN, E1_ENABLE_PIN,
+  #define _E1_PINS E1_STEP_PIN, E1_DIR_PIN, E1_ENABLE_PIN, E1_MS1_PIN, E1_MS2_PIN,
   #if MIXING_STEPPERS > 2
     #undef _E2_PINS
-    #define _E2_PINS E2_STEP_PIN, E2_DIR_PIN, E2_ENABLE_PIN,
+    #define _E2_PINS E2_STEP_PIN, E2_DIR_PIN, E2_ENABLE_PIN, E2_MS1_PIN, E2_MS2_PIN,
     #if MIXING_STEPPERS > 3
       #undef _E3_PINS
-      #define _E3_PINS E3_STEP_PIN, E3_DIR_PIN, E3_ENABLE_PIN,
+      #define _E3_PINS E3_STEP_PIN, E3_DIR_PIN, E3_ENABLE_PIN, E3_MS1_PIN, E3_MS2_PIN,
       #if MIXING_STEPPERS > 4
         #undef _E4_PINS
-        #define _E4_PINS E4_STEP_PIN, E4_DIR_PIN, E4_ENABLE_PIN,
+        #define _E4_PINS E4_STEP_PIN, E4_DIR_PIN, E4_ENABLE_PIN, E4_MS1_PIN, E4_MS2_PIN,
       #endif // MIXING_STEPPERS > 4
     #endif // MIXING_STEPPERS > 3
   #endif // MIXING_STEPPERS > 2

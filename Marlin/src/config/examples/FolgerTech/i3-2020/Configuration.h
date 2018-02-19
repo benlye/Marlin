@@ -107,12 +107,12 @@
 #define SERIAL_PORT 0
 
 /**
-  * Select a secondary serial port on the board to use for communication with the host.
-  * This allows the connection of wireless adapters (for instance) to non-default port pins.
-  * Serial port -1 is the USB emulated serial port, if avaialble.
-  *
-  * :[-1, 0, 1, 2, 3, 4, 5, 6, 7]
-  */
+ * Select a secondary serial port on the board to use for communication with the host.
+ * This allows the connection of wireless adapters (for instance) to non-default port pins.
+ * Serial port -1 is the USB emulated serial port, if available.
+ *
+ * :[-1, 0, 1, 2, 3, 4, 5, 6, 7]
+ */
 #define SERIAL_PORT_2 -1
 
 /**
@@ -138,7 +138,7 @@
 
 // Optional custom name for your RepStrap or other custom machine
 // Displayed in the LCD "Ready" message
-#define CUSTOM_MACHINE_NAME "FT-2020 v4"
+#define CUSTOM_MACHINE_NAME "FT-2020 v5"
 
 // Define this to set a unique identifier for this printer, (Used by some programs to differentiate between machines)
 // You can use an online service to generate a random UUID. (eg http://www.uuidgenerator.net/version4)
@@ -246,6 +246,15 @@
   // Enable this option to leave the PSU off at startup.
   // Power to steppers and heaters will need to be turned on with M80.
   //#define PS_DEFAULT_OFF
+
+  //#define AUTO_POWER_CONTROL        // Enable automatic control of the PS_ON pin
+  #if ENABLED(AUTO_POWER_CONTROL)
+    #define AUTO_POWER_FANS           // Turn on PSU if fans need power
+    #define AUTO_POWER_E_FANS
+    #define AUTO_POWER_CONTROLLERFAN
+    #define POWER_TIMEOUT 30
+  #endif
+
 #endif
 
 // @section temperature
@@ -277,6 +286,7 @@
  *    11 : 100k beta 3950 1% thermistor (4.7k pullup)
  *    12 : 100k 0603 SMD Vishay NTCS0603E3104FXT (4.7k pullup) (calibrated for Makibox hot bed)
  *    13 : 100k Hisens 3950  1% up to 300°C for hotend "Simple ONE " & "Hotend "All In ONE"
+ *    15 : 100k thermistor calibration for JGAurora A5 hotend
  *    20 : the PT100 circuit found in the Ultimainboard V2.x
  *    60 : 100k Maker's Tool Works Kapton Bed Thermistor beta=3950
  *    66 : 4.7M High Temperature thermistor from Dyze Design
@@ -555,7 +565,7 @@
  * Override with M203
  *                                      X, Y, Z, E0 [, E1[, E2[, E3[, E4]]]]
  */
-#define DEFAULT_MAX_FEEDRATE          { 250, 250, 2, 17 }
+#define DEFAULT_MAX_FEEDRATE          { 250, 250, 6, 17 }
 
 /**
  * Default Max Acceleration (change/s) change = mm/s
@@ -563,7 +573,7 @@
  * Override with M201
  *                                      X, Y, Z, E0 [, E1[, E2[, E3[, E4]]]]
  */
-#define DEFAULT_MAX_ACCELERATION      { 1000, 1000, 4, 750 }
+#define DEFAULT_MAX_ACCELERATION      { 1000, 1000, 10, 750 }
 
 /**
  * Default Acceleration (change/s) change = mm/s
@@ -734,8 +744,8 @@
  * Example: `M851 Z-5` with a CLEARANCE of 4  =>  9mm from bed to nozzle.
  *     But: `M851 Z+1` with a CLEARANCE of 2  =>  2mm from bed to nozzle.
  */
-#define Z_CLEARANCE_DEPLOY_PROBE    3 // Z Clearance for Deploy/Stow
-#define Z_CLEARANCE_BETWEEN_PROBES  3 // Z Clearance between probe points
+#define Z_CLEARANCE_DEPLOY_PROBE    5 // Z Clearance for Deploy/Stow
+#define Z_CLEARANCE_BETWEEN_PROBES  5 // Z Clearance between probe points
 
 // For M851 give a range for adjusting the Z probe offset
 #define Z_PROBE_OFFSET_RANGE_MIN -20
@@ -806,8 +816,8 @@
 #define X_MIN_POS 6
 #define Y_MIN_POS 3
 #define Z_MIN_POS 0
-#define X_MAX_POS 207
-#define Y_MAX_POS 182
+#define X_MAX_POS 212
+#define Y_MAX_POS 190
 #define Z_MAX_POS 175
 
 /**
@@ -916,7 +926,7 @@
   /**
    * Enable the G26 Mesh Validation Pattern tool.
    */
-  //#define G26_MESH_VALIDATION
+  #define G26_MESH_VALIDATION
   #if ENABLED(G26_MESH_VALIDATION)
     #define MESH_TEST_NOZZLE_SIZE    0.4  // (mm) Diameter of primary nozzle.
     #define MESH_TEST_LAYER_HEIGHT   0.2  // (mm) Default layer height for the G26 Mesh Validation Tool.
@@ -981,7 +991,7 @@
 
   //#define MESH_EDIT_GFX_OVERLAY   // Display a graphics overlay while editing the mesh
 
-  #define MESH_INSET 1              // Mesh inset margin on print area
+  #define MESH_INSET 0              // Mesh inset margin on print area
   #define GRID_MAX_POINTS_X 10      // Don't use more than 15 points per axis, implementation limited.
   #define GRID_MAX_POINTS_Y 10
 
@@ -1189,7 +1199,7 @@
   // Specify a park position as { X, Y, Z }
   #define NOZZLE_PARK_POINT { (X_MIN_POS + 10), (Y_MAX_POS - 10), 20 }
   #define NOZZLE_PARK_XY_FEEDRATE 100   // X and Y axes feedrate in mm/s (also used for delta printers Z axis)
-  #define NOZZLE_PARK_Z_FEEDRATE 5      // Z axis feedrate in mm/s (not used for delta printers)
+  #define NOZZLE_PARK_Z_FEEDRATE 8      // Z axis feedrate in mm/s (not used for delta printers)
 #endif
 
 /**
@@ -1560,6 +1570,12 @@
 //#define LCD_FOR_MELZI
 
 //
+// LCD for Malyan M200 printers.
+// This requires SDSUPPORT to be enabled
+//
+//#define MALYAN_LCD
+
+//
 // CONTROLLER TYPE: I2C
 //
 // Note: These controllers require the installation of Arduino's LiquidCrystal_I2C
@@ -1616,6 +1632,12 @@
   //#define U8GLIB_SSD1306
   #define U8GLIB_SH1106
 #endif
+
+//
+// Original Ulticontroller from Ultimaker 2 printer with SSD1309 I2C display and encoder
+// https://github.com/Ultimaker/Ultimaker2/tree/master/1249_Ulticontroller_Board_(x1)
+//
+//#define ULTI_CONTROLLER
 
 //
 // CONTROLLER TYPE: Shift register panels

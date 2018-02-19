@@ -25,7 +25,7 @@
  *
  * This firmware is a mashup between Sprinter and grbl.
  *  - https://github.com/kliment/Sprinter
- *  - https://github.com/simen/grbl
+ *  - https://github.com/grbl/grbl
  */
 
 #include "Marlin.h"
@@ -202,8 +202,6 @@ millis_t max_inactive_time = 0,
 
 #if ENABLED(I2C_POSITION_ENCODERS)
   I2CPositionEncodersMgr I2CPEM;
-  uint8_t blockBufferIndexRef = 0;
-  millis_t lastUpdateMillis;
 #endif
 
 /**
@@ -236,9 +234,9 @@ void setup_powerhold() {
   #endif
   #if HAS_POWER_SWITCH
     #if ENABLED(PS_DEFAULT_OFF)
-      OUT_WRITE(PS_ON_PIN, PS_ON_ASLEEP);
+      PSU_OFF();
     #else
-      OUT_WRITE(PS_ON_PIN, PS_ON_AWAKE);
+      PSU_ON();
     #endif
   #endif
 }
@@ -336,7 +334,10 @@ void disable_all_steppers() {
 void manage_inactivity(bool ignore_stepper_queue/*=false*/) {
 
   #if ENABLED(FILAMENT_RUNOUT_SENSOR)
-    if ((IS_SD_PRINTING || print_job_timer.isRunning()) && (READ(FIL_RUNOUT_PIN) == FIL_RUNOUT_INVERTING))
+    if ((IS_SD_PRINTING || print_job_timer.isRunning())
+      && READ(FIL_RUNOUT_PIN) == FIL_RUNOUT_INVERTING
+      && thermalManager.targetHotEnoughToExtrude(active_extruder)
+    )
       handle_filament_runout();
   #endif
 
@@ -427,8 +428,10 @@ void manage_inactivity(bool ignore_stepper_queue/*=false*/) {
   #endif
 
   #if ENABLED(EXTRUDER_RUNOUT_PREVENT)
-    if (ELAPSED(ms, gcode.previous_cmd_ms + (EXTRUDER_RUNOUT_SECONDS) * 1000UL)
-      && thermalManager.degHotend(active_extruder) > EXTRUDER_RUNOUT_MINTEMP) {
+    if (thermalManager.degHotend(active_extruder) > EXTRUDER_RUNOUT_MINTEMP
+      && ELAPSED(ms, gcode.previous_cmd_ms + (EXTRUDER_RUNOUT_SECONDS) * 1000UL)
+      && !planner.blocks_queued()
+    ) {
       #if ENABLED(SWITCHING_EXTRUDER)
         const bool oldstatus = E0_ENABLE_READ;
         enable_E0();
@@ -546,12 +549,10 @@ void idle(
   #endif
 
   #if ENABLED(I2C_POSITION_ENCODERS)
-    if (planner.blocks_queued() &&
-        ( (blockBufferIndexRef != planner.block_buffer_head) ||
-          ((lastUpdateMillis + I2CPE_MIN_UPD_TIME_MS) < millis())) ) {
-      blockBufferIndexRef = planner.block_buffer_head;
+    static millis_t i2cpem_next_update_ms;
+    if (planner.blocks_queued() && ELAPSED(millis(), i2cpem_next_update_ms)) {
       I2CPEM.update();
-      lastUpdateMillis = millis();
+      i2cpem_next_update_ms = millis() + I2CPE_MIN_UPD_TIME_MS;
     }
   #endif
 
@@ -687,6 +688,13 @@ void setup() {
 
   SERIAL_PROTOCOLLNPGM("start");
   SERIAL_ECHO_START();
+
+  #if ENABLED(HAVE_TMC2130)
+    tmc_init_cs_pins();
+  #endif
+  #if ENABLED(HAVE_TMC2208)
+    tmc2208_serial_begin();
+  #endif
 
   // Check startup - does nothing if bootloader sets MCUSR to 0
   byte mcu = HAL_get_reset_source();
@@ -826,6 +834,7 @@ void setup() {
   #endif
 
   lcd_init();
+  LCD_MESSAGEPGM(WELCOME_MSG);
 
   #if ENABLED(SHOW_BOOTSCREEN)
     lcd_bootscreen();

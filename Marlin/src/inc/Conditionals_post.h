@@ -693,6 +693,11 @@
 #define E3_IS_TRINAMIC (ENABLED(E3_IS_TMC2130) || ENABLED(E3_IS_TMC2208))
 #define E4_IS_TRINAMIC (ENABLED(E4_IS_TMC2130) || ENABLED(E4_IS_TMC2208))
 
+// Disable Z axis sensorless homing if a probe is used to home the Z axis
+#if ENABLED(SENSORLESS_HOMING) && HOMING_Z_WITH_PROBE
+  #undef Z_HOMING_SENSITIVITY
+#endif
+
 // Endstops and bed probe
 #define HAS_X_MIN (PIN_EXISTS(X_MIN) && !IS_X2_ENDSTOP(X,MIN) && !IS_Y2_ENDSTOP(X,MIN) && !IS_Z2_OR_PROBE(X,MIN))
 #define HAS_X_MAX (PIN_EXISTS(X_MAX) && !IS_X2_ENDSTOP(X,MAX) && !IS_Y2_ENDSTOP(X,MAX) && !IS_Z2_OR_PROBE(X,MAX))
@@ -911,7 +916,7 @@
 
   #define _GET_SIDE(a,b,c) (SQRT(2*sq(a)+2*sq(b)-4*sq(c))*0.5)
   #define _SKEW_SIDE(a,b,c) tan(M_PI*0.5-acos((sq(a)-sq(b)-sq(c))/(2*c*b)))
-  #define _SKEW_FACTOR(a,b,c) _SKEW_SIDE(a,_GET_SIDE(a,b,c),c)
+  #define _SKEW_FACTOR(a,b,c) _SKEW_SIDE(float(a),_GET_SIDE(float(a),float(b),float(c)),float(c))
 
   #ifndef XY_SKEW_FACTOR
     constexpr float XY_SKEW_FACTOR = (
@@ -1115,9 +1120,9 @@
 #endif
 
 /**
- * VIKI2, miniVIKI, and AZSMZ_12864 require DOGLCD_SCK and DOGLCD_MOSI to be defined.
+ * VIKI2, miniVIKI, AZSMZ_12864, and MKS_12864OLED_SSD1306 require DOGLCD_SCK and DOGLCD_MOSI to be defined.
  */
-#if ENABLED(VIKI2) || ENABLED(miniVIKI) || ENABLED(AZSMZ_12864)
+#if ENABLED(VIKI2) || ENABLED(miniVIKI) || ENABLED(AZSMZ_12864) || ENABLED(MKS_12864OLED_SSD1306)
   #ifndef DOGLCD_SCK
     #define DOGLCD_SCK  SCK_PIN
   #endif
@@ -1250,6 +1255,12 @@
   #endif
 #endif
 
+// Nozzle park
+#if ENABLED(NOZZLE_PARK_FEATURE) && ENABLED(DELTA)
+  #undef NOZZLE_PARK_Z_FEEDRATE
+  #define NOZZLE_PARK_Z_FEEDRATE NOZZLE_PARK_XY_FEEDRATE
+#endif
+
 // Force SDCARD_SORT_ALPHA to be enabled for Graphical LCD on LPC1768
 // because of a bug in the shared SPI implementation. (See #8122)
 #if defined(TARGET_LPC1768) && ENABLED(REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER)
@@ -1260,7 +1271,7 @@
   #undef SDSORT_USES_RAM
   #undef SDSORT_USES_STACK
   #undef SDSORT_CACHE_NAMES
-  #define SDSORT_LIMIT       256
+  #define SDSORT_LIMIT       64
   #define SDSORT_USES_RAM    true
   #define SDSORT_USES_STACK  false
   #define SDSORT_CACHE_NAMES true
