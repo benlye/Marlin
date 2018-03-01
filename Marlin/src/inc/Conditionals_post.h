@@ -718,8 +718,13 @@
 #define E4_IS_TRINAMIC (ENABLED(E4_IS_TMC2130) || ENABLED(E4_IS_TMC2208))
 
 // Disable Z axis sensorless homing if a probe is used to home the Z axis
-#if ENABLED(SENSORLESS_HOMING) && HOMING_Z_WITH_PROBE
-  #undef Z_HOMING_SENSITIVITY
+#if ENABLED(SENSORLESS_HOMING)
+  #define X_SENSORLESS (ENABLED(X_IS_TMC2130) && defined(X_HOMING_SENSITIVITY))
+  #define Y_SENSORLESS (ENABLED(Y_IS_TMC2130) && defined(Y_HOMING_SENSITIVITY))
+  #define Z_SENSORLESS (ENABLED(Z_IS_TMC2130) && defined(Z_HOMING_SENSITIVITY))
+  #if HOMING_Z_WITH_PROBE
+    #undef Z_HOMING_SENSITIVITY
+  #endif
 #endif
 
 // Endstops and bed probe
@@ -792,7 +797,6 @@
 
 // Sensors
 #define HAS_FILAMENT_WIDTH_SENSOR (PIN_EXISTS(FILWIDTH))
-#define HAS_FIL_RUNOUT (PIN_EXISTS(FIL_RUNOUT))
 
 // User Interface
 #define HAS_HOME (PIN_EXISTS(HOME))
@@ -916,11 +920,6 @@
     #else
       #define XY_PROBE_SPEED 4000
     #endif
-  #endif
-  #if Z_CLEARANCE_BETWEEN_PROBES > Z_CLEARANCE_DEPLOY_PROBE
-    #define _Z_CLEARANCE_DEPLOY_PROBE Z_CLEARANCE_BETWEEN_PROBES
-  #else
-    #define _Z_CLEARANCE_DEPLOY_PROBE Z_CLEARANCE_DEPLOY_PROBE
   #endif
 #else
   #undef X_PROBE_OFFSET_FROM_EXTRUDER
