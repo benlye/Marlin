@@ -289,18 +289,26 @@ void Planner::reverse_pass_kernel(block_t* const current, const block_t * const 
  * Once in reverse and once forward. This implements the reverse pass.
  */
 void Planner::reverse_pass() {
-  if (movesplanned() > 3) {
-    const uint8_t endnr = BLOCK_MOD(block_buffer_tail + 2); // tail is running. tail+1 shouldn't be altered because it's connected to the running block.
-                                                            // tail+2 because the index is not yet advanced when checked
+  if (movesplanned() > 2) {
+    const uint8_t endnr = BLOCK_MOD(block_buffer_tail + 1); // tail is running. tail+1 shouldn't be altered because it's connected to the running block.
     uint8_t blocknr = prev_block_index(block_buffer_head);
     block_t* current = &block_buffer[blocknr];
+
+    // Last/newest block in buffer:
+    const float max_entry_speed = current->max_entry_speed;
+    if (current->entry_speed != max_entry_speed) {
+      // If nominal length true, max junction speed is guaranteed to be reached. Only compute
+      // for max allowable speed if block is decelerating and nominal length is false.
+      current->entry_speed = TEST(current->flag, BLOCK_BIT_NOMINAL_LENGTH)
+        ? max_entry_speed
+        : min(max_entry_speed, max_allowable_speed(-current->acceleration, MINIMUM_PLANNER_SPEED, current->millimeters));
+      SBI(current->flag, BLOCK_BIT_RECALCULATE);
+    }
 
     do {
       const block_t * const next = current;
       blocknr = prev_block_index(blocknr);
       current = &block_buffer[blocknr];
-      if (TEST(current->flag, BLOCK_BIT_START_FROM_FULL_HALT)) // Up to this every block is already optimized.
-        break;
       reverse_pass_kernel(current, next);
     } while (blocknr != endnr);
   }
@@ -920,7 +928,6 @@ void Planner::_buffer_steps(const int32_t (&target)[XYZE]
 
   // Enable extruder(s)
   if (esteps) {
-
     #if ENABLED(AUTO_POWER_CONTROL)
       powerManager.power_on();
     #endif
@@ -1294,10 +1301,10 @@ void Planner::_buffer_steps(const int32_t (&target)[XYZE]
   }
   block->acceleration_steps_per_s2 = accel;
   block->acceleration = accel / steps_per_mm;
-  block->acceleration_rate = (long)(accel * 16777216.0 / ((F_CPU) * 0.125)); // * 8.388608
+  block->acceleration_rate = (long)(accel * (4096.0 * 4096.0 / (HAL_STEPPER_TIMER_RATE)));
   #if ENABLED(LIN_ADVANCE)
     if (block->use_advance_lead) {
-      block->advance_speed = ((F_CPU) * 0.125) / (extruder_advance_K * block->e_D_ratio * block->acceleration * axis_steps_per_mm[E_AXIS_N]);
+      block->advance_speed = (HAL_STEPPER_TIMER_RATE) / (extruder_advance_K * block->e_D_ratio * block->acceleration * axis_steps_per_mm[E_AXIS_N]);
       #if ENABLED(LA_DEBUG)
         if (extruder_advance_K * block->e_D_ratio * block->acceleration * 2 < block->nominal_speed * block->e_D_ratio)
           SERIAL_ECHOLNPGM("More than 2 steps per eISR loop executed.");
@@ -1425,17 +1432,11 @@ void Planner::_buffer_steps(const int32_t (&target)[XYZE]
     // Now the transition velocity is known, which maximizes the shared exit / entry velocity while
     // respecting the jerk factors, it may be possible, that applying separate safe exit / entry velocities will achieve faster prints.
     const float vmax_junction_threshold = vmax_junction * 0.99f;
-    if (previous_safe_speed > vmax_junction_threshold && safe_speed > vmax_junction_threshold) {
-      // Not coasting. The machine will stop and start the movements anyway,
-      // better to start the segment from start.
-      SBI(block->flag, BLOCK_BIT_START_FROM_FULL_HALT);
+    if (previous_safe_speed > vmax_junction_threshold && safe_speed > vmax_junction_threshold)
       vmax_junction = safe_speed;
-    }
   }
-  else {
-    SBI(block->flag, BLOCK_BIT_START_FROM_FULL_HALT);
+  else
     vmax_junction = safe_speed;
-  }
 
   // Max entry speed of this block equals the max exit speed of the previous block.
   block->max_entry_speed = vmax_junction;
@@ -1692,8 +1693,7 @@ void Planner::refresh_positioning() {
 #if ENABLED(AUTOTEMP)
 
   void Planner::autotemp_M104_M109() {
-    autotemp_enabled = parser.seen('F');
-    if (autotemp_enabled) autotemp_factor = parser.value_celsius_diff();
+    if ((autotemp_enabled = parser.seen('F'))) autotemp_factor = parser.value_float();
     if (parser.seen('S')) autotemp_min = parser.value_celsius();
     if (parser.seen('B')) autotemp_max = parser.value_celsius();
   }
