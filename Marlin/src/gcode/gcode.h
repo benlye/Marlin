@@ -285,8 +285,16 @@ public:
 
   static bool get_target_extruder_from_command();
   static void get_destination_from_command();
-  static void process_parsed_command();
+  static void process_parsed_command(
+    #if ENABLED(USE_EXECUTE_COMMANDS_IMMEDIATE)
+      const bool no_ok = false
+    #endif
+  );
   static void process_next_command();
+
+  #if ENABLED(USE_EXECUTE_COMMANDS_IMMEDIATE)
+    static void process_subcommands_now_P(const char *pgcode);
+  #endif
 
   FORCE_INLINE static void home_all_axes() { G28(true); }
 
@@ -380,6 +388,9 @@ private:
 
   #if HAS_LEVELING
     static void G29();
+    #if ENABLED(G29_RETRY_AND_RECOVER)
+      static void G29_with_retry();
+    #endif
   #endif
 
   #if HAS_BED_PROBE
@@ -536,7 +547,7 @@ private:
     #endif
   #endif
 
-  #if HAS_HEATER_BED && HAS_TEMP_BED
+  #if HAS_HEATED_BED
     static void M140();
     static void M190();
   #endif
