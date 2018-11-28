@@ -47,6 +47,9 @@
 #endif
 #define _ROT ((MAX7219_ROTATE + 360) % 360)
 
+#ifndef MAX7219_NUMBER_UNITS
+  #define MAX7219_NUMBER_UNITS 1
+#endif
 #define MAX7219_LINES (8 * (MAX7219_NUMBER_UNITS))
 
 #if _ROT == 0 || _ROT == 180
@@ -93,7 +96,7 @@ public:
   static void send(const uint8_t reg, const uint8_t data);
 
   // Refresh all units
-  inline static void refresh() { for (uint8_t i = 0; i < 8; i++) refresh_line(i); }
+  static inline void refresh() { for (uint8_t i = 0; i < 8; i++) refresh_line(i); }
 
   // Update a single native line on all units
   static void refresh_line(const uint8_t line);
