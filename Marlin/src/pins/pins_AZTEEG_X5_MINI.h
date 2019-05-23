@@ -29,7 +29,7 @@
 #endif
 
 #ifndef BOARD_NAME
-  #define BOARD_NAME        "Azteeg X5 MINI WIFI"
+  #define BOARD_NAME        "Azteeg X5 MINI"
 #endif
 #define BOARD_WEBSITE_URL "http://www.panucatt.com/azteeg_X5_mini_reprap_3d_printer_controller_p/ax5mini.htm"
 
@@ -50,8 +50,12 @@
 #define Y_STOP_PIN         P1_26
 #define Z_STOP_PIN         P1_28
 
+#ifndef FIL_RUNOUT_PIN
+  #define FIL_RUNOUT_PIN   P2_04
+#endif
+
 #ifndef FILWIDTH_PIN
-  #define FILWIDTH_PIN     P2_04
+  #define FILWIDTH_PIN         2   // Analog Input (P0_25)
 #endif
 
 //
@@ -185,13 +189,9 @@
 //
 // SD Support
 //
-//#define USB_SD_DISABLED     // Disable host access to SD card as mass storage device through USB
-//#define USB_SD_ONBOARD      // Enable host access to SD card as mass storage device through USB
-
-//#define LPC_SD_LCD          // Marlin uses the SD drive attached to the LCD
-#define LPC_SD_ONBOARD        // Marlin uses the SD drive on the control board.  There is no SD detect pin
-                              // for the onboard card.  Init card from LCD menu or send M21 whenever printer
-                              // is powered on to enable SD access.
+#if !ANY(LPC_SD_LCD, LPC_SD_ONBOARD, LPC_SD_CUSTOM_CABLE)
+  #define LPC_SD_ONBOARD
+#endif
 
 #if ENABLED(LPC_SD_LCD)
 
