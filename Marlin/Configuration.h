@@ -1366,7 +1366,7 @@
 
 // Travel limits (mm) after homing, corresponding to endstop positions.
 #define X_MIN_POS -35
-#define Y_MIN_POS -10
+#define Y_MIN_POS -15
 #define Z_MIN_POS 0
 #define X_MAX_POS 230
 #define Y_MAX_POS 225
